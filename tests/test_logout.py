@@ -1,22 +1,18 @@
-import pytest 
-from locators import Locators as L
+import pytest
+from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.support import expected_conditions as EC
 from data import Data
-
-
-@pytest.fixture()
-def auth_fixture(authenticated_driver):
-    return authenticated_driver
+from locators import Locators as L
 
 
 @pytest.mark.logout
-def test_logout(auth_fixture):  
-    driver = auth_fixture
+class TestLogout:
 
-    driver.get(Data.PROFILE_URL)
+    def test_logout(self, authenticated_driver):
+        driver = authenticated_driver
+        driver.get(Data.PROFILE_URL)
+        driver.find_element(*L.PROFILE_LOGOUT_LINK).click()
 
-    driver.implicitly_wait(1)
-
-    logout_btn = driver.find_element(*L.PROFILE_LOGOUT_LINK).click()
-
-    login_field = driver.find_elements(*L.LOGIN_EMAIL_INPUT)
-    assert len(login_field) > 0, "Форма входа не открылась после выхода."
+        assert WebDriverWait(driver, 5).until(
+            EC.visibility_of_element_located(L.LOGIN_EMAIL_INPUT)
+        ), "Форма входа не открылась после выхода."

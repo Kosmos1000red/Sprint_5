@@ -1,54 +1,36 @@
 import pytest
-from locators import Locators as L
+from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.support import expected_conditions as EC
 from data import Data
-
-
-@pytest.fixture()
-def auth_fixture(authenticated_driver):
-    return authenticated_driver
+from locators import Locators as L
 
 
 @pytest.mark.profile
-def test_go_to_profile_from_home(auth_fixture): 
-    
-    driver = auth_fixture
+class TestProfile:
 
-    driver.get(Data.APP_URL)
+    def test_go_to_profile_from_home(self, authenticated_driver):
+        driver = authenticated_driver
+        driver.get(Data.APP_URL)
+        driver.find_element(*L.MAIN_PROFILE_BUTTON).click()
 
-    account_btn = driver.find_element(*L.MAIN_PROFILE_BUTTON)
-    account_btn.click()
+        assert WebDriverWait(driver, 5).until(
+            EC.visibility_of_element_located(L.PROFILE_LOGOUT_LINK)
+        ), "Переход в личный кабинет не удался."
 
-    login_field = driver.find_elements(*L.LOGIN_EMAIL_INPUT)
-    assert len(login_field) > 0, \
-        "Кнопка 'Личный кабинет' не привела к форме входа."
+    def test_go_to_constructor_from_profile(self, authenticated_driver):
+        driver = authenticated_driver
+        driver.get(Data.PROFILE_URL)
+        driver.find_element(*L.PROFILE_CONSTRUCTOR_BUTTON).click()
 
-    logout_btn = driver.find_elements(*L.PROFILE_LOGOUT_LINK)
-    assert len(logout_btn) > 0, "Авторизация после нажатия кнопки ЛК не сработала."
+        assert WebDriverWait(driver, 5).until(
+            EC.visibility_of_element_located(L.MAIN_COMBINE_TEXT)
+        ), "Заголовок конструктора не найден после перехода из ЛК."
 
+    def test_go_to_home_from_profile_by_logo(self, authenticated_driver):
+        driver = authenticated_driver
+        driver.get(Data.PROFILE_URL)
+        driver.find_element(*L.PROFILE_LOGO).click()
 
-@pytest.mark.profile
-def test_go_to_constructor_from_profile(auth_fixture):
-    
-    driver = auth_fixture
-
-    driver.get(Data.PROFILE_URL)
-
-    constructor_link = driver.find_element(*L.PROFILE_CONSTRUCTOR_BUTTON)
-    constructor_link.click()
-
-    title = driver.find_elements(*L.MAIN_COMBINE_TEXT)
-    assert len(title) > 0, "Заголовок конструктора не найден."
-
-
-@pytest.mark.profile
-def test_go_to_home_from_profile(auth_fixture):
-    
-    driver = auth_fixture
-
-    driver.get(Data.PROFILE_URL)
-
-    logo = driver.find_element(*L.PROFILE_LOGO)
-    logo.click()
-
-    combine_text = driver.find_elements(*L.MAIN_COMBINE_TEXT)
-    assert len(combine_text) > 0, "Логотип не вернул на главную страницу."
+        assert WebDriverWait(driver, 5).until(
+            EC.visibility_of_element_located(L.MAIN_COMBINE_TEXT)
+        ), "Логотип не вернул на главную страницу."

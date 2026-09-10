@@ -1,78 +1,50 @@
 import pytest
-from locators import Locators as L
-from data import Data
-from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
-
-
-@pytest.fixture()
-def auth_fixture(authenticated_driver):
-    return authenticated_driver
-
-
-@pytest.mark.login
-def test_login_via_main_button(driver):
-    
-    driver.get(Data.APP_URL)
-
-    enter_btn = driver.find_element(*L.MAIN_ACCOUNT_BUTTON) 
-    enter_btn.click()
-
-    login_field = driver.find_elements(*L.LOGIN_EMAIL_INPUT)
-    assert len(login_field) > 0, "Форма входа не открылась."
+from selenium.webdriver.support import expected_conditions as EC
+from data import Data
+from locators import Locators as L
 
 
 @pytest.mark.login
-def test_login_via_account_button(auth_fixture): 
+class TestLogin:
 
-    driver = auth_fixture
+    def _login(self, driver):
+        driver.find_element(*L.LOGIN_EMAIL_INPUT).send_keys(Data.EMAIL)
+        driver.find_element(*L.LOGIN_PASSWORD_INPUT).send_keys(Data.PASSWORD)
+        driver.find_element(*L.LOGIN_LOGIN_BUTTON).click()
 
-    driver.get(Data.APP_URL)
+    def test_login_via_main_button(self, driver):
+        driver.get(Data.APP_URL)
+        driver.find_element(*L.MAIN_ACCOUNT_BUTTON).click()
+        self._login(driver)
 
-    account_btn = driver.find_element(*L.MAIN_PROFILE_BUTTON)
-    account_btn.click()
+        assert WebDriverWait(driver, 5).until(
+            EC.visibility_of_element_located(L.MAIN_ORDER_BUTTON)
+        ), "Вход через кнопку 'Войти в аккаунт' не удался."
 
-    login_field = driver.find_elements(*L.LOGIN_EMAIL_INPUT)
-    assert len(login_field) > 0, \
-        "Кнопка 'Личный кабинет' не привела к форме входа."
+    def test_login_via_account_button(self, driver):
+        driver.get(Data.APP_URL)
+        driver.find_element(*L.MAIN_PROFILE_BUTTON).click()
+        self._login(driver)
 
-    logout_btn = driver.find_elements(*L.PROFILE_LOGOUT_LINK)
-    assert len(logout_btn) > 0, "Авторизация после нажатия кнопки ЛК не сработала."
+        assert WebDriverWait(driver, 5).until(
+            EC.visibility_of_element_located(L.MAIN_ORDER_BUTTON)
+        ), "Вход через кнопку 'Личный кабинет' не удался."
 
+    def test_login_via_registration_link(self, driver):
+        driver.get(Data.REG_URL)
+        driver.find_element(*L.REG_LOGIN_LINK).click()
+        self._login(driver)
 
-@pytest.mark.login
-def test_login_via_registration_link(driver):
-    
-    driver.get(Data.REG_URL)
+        assert WebDriverWait(driver, 5).until(
+            EC.visibility_of_element_located(L.MAIN_ORDER_BUTTON)
+        ), "Вход через ссылку на форме регистрации не удался."
 
-    back_to_login_link = driver.find_element(
-        By.XPATH,
-        "//a[@href='/login']"
-    )
-    back_to_login_link.click()
+    def test_login_via_forgot_pass_form(self, driver):
+        driver.get(Data.PWD_RECOVERY_URL)
+        driver.find_element(*L.RECOVERY_PAGE_LOGIN_LINK).click()
+        self._login(driver)
 
-    email_input = driver.find_elements(*L.LOGIN_EMAIL_INPUT)
-    assert len(email_input) > 0, "Ссылка 'Войти' не привела к форме входа."
-
-
-@pytest.mark.login
-def test_login_via_forgot_pass_form(driver):
-
-    driver.get(Data.BURGERS_URL)
-
-    enter_btn = driver.find_element(*L.MAIN_ACCOUNT_BUTTON).click()
-
-    forgot_link = driver.find_element(
-        By.XPATH,
-        "//a[contains(@href, '/forgot-password')]"
-    ).click()
-
-    back_to_login_link = driver.find_element(*L.RECOVERY_PAGE_LOGIN_LINK).click()
-
-    email_input = driver.find_elements(*L.LOGIN_EMAIL_INPUT)
-    assert len(email_input) > 0, "Не удалось вернуться на форму входа."
-
-    WebDriverWait(driver, 5).until(  
-        lambda d: d.current_url.startswith(Data.PROFILE_URL),
-        message='После авторизации пользователь не попал в Профиль'
-    )
+        assert WebDriverWait(driver, 5).until(
+            EC.visibility_of_element_located(L.MAIN_ORDER_BUTTON)
+        ), "Вход через форму восстановления пароля не удался."
